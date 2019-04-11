@@ -1,0 +1,168 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+plot(cars)
+library(ggplot2)
+
+#必须数据集完全一样才可以绘图的，软来如此。
+
+plot <- ggplot(data = subset(diamonds,diamonds$x>0),aes(x = subset(diamonds,diamonds$x>0)$x,y=subset(diamonds,diamonds$x>0)$price))
+plot +geom_point()+geom_smooth(method="lm",color="green")
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+```{r}
+Sys.setlocale('LC_ALL','C')
+#价格和x的相关系数之间有什么关系
+notZero <- subset(diamonds,diamonds$x>0)  #这样就可以了，不要x等关0的这个
+
+
+cor.test(notZero$price,notZero$x)  #这样也算是强相关了啊
+cor.test(notZero$price,notZero$y)
+cor.test(notZero$price,notZero$z)
+# here is a strong corr in it .
+
+#点图关于价格和深度，deepen 。。#这个只是给数据绘制平滑曲线，并不是回归曲线，也不是相关性曲线
+ggplot(data = diamonds,aes(x=diamonds$depth,y=diamonds$price))+geom_point(alpha=1/100) +geom_smooth(method="lm",color="green") +scale_x_continuous(breaks = seq(40,79,2))+xlim(40,80)
+  
+# Change the code to make the transparency of the
+# points to be 1/100 of what they are now and mark
+# the x-axis every 2 units. See the instructor notes
+# for two hints.
+#含相关直线的图层。能做时间的据类分析这个才是最屌的，能够对时间长度上做连续时间的变化的分析，这个就是聚类的东西。
+range(diamonds$depth)  #查看这个深度的上下限。，典型深度范围，
+
+cor.test(diamonds$price,diamonds$depth)
+cor.test(diamonds$depth,diamonds$price)
+# 画四分位图，和box图看看
+ggplot(data = diamonds,aes(x=diamonds$price,y=diamonds$depth))+geom_boxplot()+scale_y_continuous(breaks=seq(60,65))+ylim(60,65) #+geom_smooth(method="lm",color="green") 
+summary(diamonds$depth)
+
+#这个只是给数据绘制平滑曲线，并不是回归曲线，也不是相关性曲线
+?limits
+  # scale_x_continuous(breaks = seq(40,79,2))+xlim(40,80)
+#下面是绘制价格和克拉之间关系的点图
+
+ggplot(data=diamonds,aes(x=diamonds$price,y=diamonds$carat))+geom_point()
+
+
+
+#下面一个可能需要创建新的列下来，然后作为体积列，然后x*y*z这样来就可以 。
+# 1.如何为data frame添加行。√
+# 2.如何把选定的值进行运算后赋值给这个行√
+# 3.添加完毕后，可视化查看关系√
+
+diamonds$volumn <-NA  #设置为空
+summary(diamonds)
+diamonds$volumn <- diamonds$x*diamonds$y*diamonds$z   #去掉值为0的才可以。
+
+#截断，并且放大图像这个能力是很重要的，
+#截断主要是limit的功能。
+#而breaks最重要的应该是步长(0,end,step)
+
+ggplot(data=diamonds,aes(x=diamonds$volumn,diamonds$price))+geom_point(alpha=1/20)+scale_x_continuous(breaks=seq(0,1000,100),limits = c(0,450))
+  
+ggplot(data=diamonds,aes(x=factor(diamonds$price),y=diamonds$volumn))+geom_boxplot()#+scale_x_continuous(breaks=seq(0,1000,100),limits = c(0,450))
+
+# detach("package:plyr", unload=TRUE)
+smallDiamands <- subset(diamonds,diamonds$volumn<800 & diamonds$volumn!=0)
+smallDiamands  #没有东西在这里面,  exclude the max and the mini volume
+
+cor.test(smallDiamands$price,smallDiamands$volumn)
+
+summary(diamonds$volumn)   #0.90
+#使用平滑器，
+ggplot(data = smallDiamands,aes(x=smallDiamands$volumn,y=smallDiamands$price))+geom_point(alpha=1/20)+geom_smooth()
+
+#https://www.cnblogs.com/duanxingxing/p/5441883.html  关于smooth的这个。
+
+?geom_smooth()
+# 四分位距离170-65
+170-65
+  
+```
+# 1.了解dplyr包的
+# 2.找到对应需求的需要用到的方法，
+# 3.测试使用这个方法。
+# 4.不用所有都知道，适当的放弃完美带来的打击。
+
+```{r}
+#价格和纯度之间的关系，两个变量之间的关系，做学问的时候，必须要遇到很多的内容，大胆说不
+suppressMessages(library(ggplot2))
+suppressMessages(library(dplyr))
+data(diamonds)
+diamonds
+
+#很多种方法来表示这儿东西的，所以不用担心。
+#这样就只返回了分类聚合了的数据
+summarise(group_by(diamonds,diamonds$clarity,diamonds$price))
+
+
+median(as.numeric(var))
+
+#汇总开始，按纯净度来进行分类
+
+#       (1) mean_price
+#       (2) median_price
+#       (3) min_price
+#       (4) max_price
+#       (5) n
+## 1.按这样来汇总只是厉害
+clarity_diamonds <- group_by(diamonds,clarity)
+test <-summarise(clarity_diamonds,
+    mean_price= mean(as.numeric(price)),
+    median_price = median(as.numeric(price)),
+    min_price = min(as.numeric(price)),
+    max_price=  max(as.numeric(price)),
+    n = n())
+test
+
+# 2.第二种方法，使用更简洁一点的链接法来处理这个东西。
+# 链接过去，上面是传过去df，所以是一样的。连接过去，所以summraies就不需要设定data=这个属性。
+summ_diamonds <- diamonds %>% group_by(clarity) %>% 
+  summarise(
+           mean_price =mean(as.numeric(price)),
+           median_price = median(as.numeric(price)),
+           min_price = min(as.numeric(price)),
+           max_price = max(as.numeric(price)),
+           n= n()#我也不知道这个是怎么回事。
+            )
+
+library(gridExtra)   #这儿两组是不一样的。
+diamonds_by_clarity <- group_by(diamonds, clarity)
+diamonds_mp_by_clarity <- summarise(diamonds_by_clarity, mean_price = mean(price))
+
+#刚好两个变量，i know it/  做东西都要这样，把大象装进冰箱，分解
+# 1.首先是如何使用mp数据集来画柱状图
+# 2.然后就是看看如何把这两个不同的东西画柱状图
+# 3.两个一起来
+
+diamonds_by_color <- group_by(diamonds, color)
+diamonds_mp_by_color <- summarise(diamonds_by_color, mean_price = mean(price))
+
+
+
+p1 <- ggplot(data = diamonds_mp_by_clarity,aes(x=diamonds_mp_by_clarity$clarity,y=diamonds_mp_by_clarity$mean_price))+geom_bar(stat = "identity" )
+
+
+p2<-ggplot(data = diamonds_mp_by_color,aes(x=diamonds_mp_by_color$color,y=diamonds_mp_by_color$mean_price))+geom_bar(stat = "identity" )
+
+grid.arrange(p1,p2,ncol=2)   #毕竟是双变量的分析
+  
+```
+# 最后一个小练习毕竟还是双变量的分析，所以还是只有两个变量的情况。
+
+# 然后是多变量，所以，我现在觉得，很重要的一个东西是习题集，习题集给我的作用比直接看课卡在课上好多了，
+# 这是我个人的学习经验，练习不错。比课程有条理的实战。

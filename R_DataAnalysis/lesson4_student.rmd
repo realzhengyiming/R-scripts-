@@ -1,0 +1,315 @@
+Lesson 4
+========================================================
+
+***
+
+### Scatterplots and Perceived Audience Size
+Notes:
+
+***
+
+### Scatterplots
+Notes:
+
+```{r Scatterplots}
+encoding = "UTF-8"
+library(ggplot2)
+getwd()  #默认打开文件的 那个地方就是工作区了，原来如此。
+# ssetwd("D:\存放东西的仓库\Python开源或者是别的东西\数据分析\项目三_探索性数据分析EDA\课程5，双变量分析")   斜杠是反向的才对
+pf <-read.delim('pseudo_facebook.tsv')
+# pf <- read.csv("")
+ggplot(data=pf,aes(x=pf$age,y=pf$friend_count))+geom_point()
+#点数输出来了，但是其实堆叠起来后看不清楚到底多还是少。所以就需要调节
+```
+
+***
+
+#### What are some things that you notice right away?
+Response:
+很多的点都杂糅在一起了，其实看不清到底下面那一片之间那儿密集一点，都看不清额
+***
+
+### ggplot Syntax
+Notes:
+
+```{r ggplot Syntax}
+pfplot <- ggplot(data=pf,aes(x=pf$age,y=pf$friend_count))
+#设置透明度，这个是防止点给遮挡了。但是下面部分好像还是存在看不清的情况，所以这时候就需要“抖动”
+pfplot+geom_point(alpha=1/20)
+pfplot+geom_point(alpha=1/20,position=position_jitter(height =0))
+
+
+```
+
+***
+
+### Overplotting
+Notes:
+
+```{r Overplotting}
+
+```
+
+#### What do you notice in the plot?
+Response:
+
+***
+
+### Coord_trans()
+Notes:
+
+```{r Coord_trans()}
+pfplot+geom_point(alpha=1/20,position=position_jitter(height =0))+xlim(10,60)  
+#这个是使用限制显示x轴的。
+
+pfplot+geom_point(alpha=1/20,position=position_jitter(height =0))+xlim(10,60)+coord_trans(y='sqrt')      #这个是开方后的。让y轴开方
+
+
+
+```
+
+#### Look up the documentation for coord_trans() and add a layer to the plot that transforms friend_count using the square root function. Create your plot!
+
+```{r}
+
+```
+
+#### What do you notice?
+
+***
+
+### Alpha and Jitter
+Notes:
+
+```{r Alpha and Jitter}
+pfplot+geom_point(alpha=1/20,position=position_jitter(height =0))+xlim(10,60)+coord_trans(y='sqrt')  
+```
+
+***
+
+### Overplotting and Domain Knowledge
+Notes:
+
+***
+
+### Conditional Means
+Notes:
+增加数据框的均值来进行处理，这个东西不可以太慢了。
+为了了解变量的平均值或者中位数 才能更好的看到变量之间的关系
+```{r Conditional Means}  
+install.packages('dplyr')
+library(dplyr)
+
+#第一种情况，不适用dplyr包
+age_group <- group_by(pf,age)
+pf.fc_by_age <-summary(age_group,
+        friend_count_mean=mean(friend_count),
+        friend_count_median = median(friend_count),
+        n = n())
+pf.fc_by_age <- arrange(pf.fc_by_age,age)
+head(ppf.fc_by_age)
+
+# 上面第一种报错了，现在这儿开始时第二种方法
+pf.fc_by_age <-pf %>%
+  group_by(age) %>%
+  summarise(friend_count_mean = mean(friend_count),
+            friend_count_median = median(friend_count),
+            n = n() ) %>%
+  arrange(age)
+
+head(pf.fc_by_age)
+
+ggplot(data = pf,aes(x = pf.fc_by_age))+geom_point()
+```
+
+Create your plot!
+
+```{r Conditional Means Plot}
+
+```
+
+***
+
+### Overlaying Summaries with Raw Data
+Notes:
+
+```{r Overlaying Summaries with Raw Data}
+
+```
+
+#### What are some of your observations of the plot?
+Response:
+
+***
+
+### Moira: Histogram Summary and Scatterplot
+See the Instructor Notes of this video to download Moira's paper on perceived audience size and to see the final plot.
+
+Notes:
+
+***
+
+### Correlation
+Notes:
+
+```{r Correlation}
+
+```
+
+Look up the documentation for the cor.test function.
+
+What's the correlation between age and friend count? Round to three decimal places.
+Response:
+
+***
+
+### Correlation on Subsets
+Notes:
+
+```{r Correlation on Subsets}
+with(                 , cor.test(age, friend_count))
+```
+
+***
+
+### Correlation Methods
+Notes:
+
+***
+
+## Create Scatterplots
+Notes:
+
+```{r}
+
+```
+
+***
+
+### Strong Correlations
+Notes:
+
+```{r Strong Correlations}
+
+```
+
+What's the correlation betwen the two variables? Include the top 5% of values for the variable in the calculation and round to 3 decimal places.
+
+```{r Correlation Calcuation}
+
+```
+
+Response:
+
+***
+
+### Moira on Correlation
+Notes:
+
+***
+
+### More Caution with Correlation
+Notes:
+
+```{r More Caution With Correlation}
+install.packages('alr3')
+library(alr3)
+```
+
+Create your plot!
+
+```{r Temp vs Month}
+
+```
+
+***
+
+### Noisy Scatterplots
+a. Take a guess for the correlation coefficient for the scatterplot.
+
+b. What is the actual correlation of the two variables?
+(Round to the thousandths place)
+
+```{r Noisy Scatterplots}
+
+```
+
+***
+
+### Making Sense of Data
+Notes:
+
+```{r Making Sense of Data}
+
+```
+
+***
+
+### A New Perspective
+
+What do you notice?
+Response:
+
+Watch the solution video and check out the Instructor Notes!
+Notes:
+
+***
+
+### Understanding Noise: Age to Age Months
+Notes:
+
+```{r Understanding Noise: Age to Age Months}
+
+```
+
+***
+
+### Age with Months Means
+
+```{r Age with Months Means}
+
+```
+
+Programming Assignment
+```{r Programming Assignment}
+
+```
+
+***
+
+### Noise in Conditional Means
+
+```{r Noise in Conditional Means}
+
+```
+
+***
+
+### Smoothing Conditional Means
+Notes:
+
+```{r Smoothing Conditional Means}
+
+```
+
+***
+
+### Which Plot to Choose?
+Notes:
+
+***
+
+### Analyzing Two Variables
+Reflection:
+
+***
+
+Click **KnitHTML** to see all of your hard work and to have an html
+page of this lesson, your answers, and your notes!
+```{r}
+#探索两个变量的，data 。 price和x
+library(ggplot2)
+library(diam)
+
+
+```

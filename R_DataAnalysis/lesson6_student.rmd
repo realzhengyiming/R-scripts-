@@ -1,0 +1,408 @@
+Lesson 6
+========================================================
+
+### Welcome
+Notes:
+# 失恋和白白双重打击把。
+1.复习散点图，y=price ，x weight
+***
+
+### Scatterplot Review
+```{r}
+library(ggplot2)
+library(reshape2)
+
+```
+
+```{r Scatterplot Review}
+ggplot(subset(diamonds,price <= quantile(price,0.1)),aes(x=carat,y=price))+geom_point()
+
+
+#没加特效时候的答案
+ggplot(diamonds,aes(x=carat,y=price))+
+  xlim(0,quantile(diamonds$carat,0.99))+
+  ylim(0,quantile(diamonds$price,0.99))+
+  geom_point()
+
+
+#加特效后的答案，更容易识别和看
+ggplot(diamonds,aes(x=carat,y=price))+
+  xlim(0,quantile(diamonds$carat,0.99))+
+  ylim(0,quantile(diamonds$price,0.99))+
+  geom_point(fill=I("#F79420"),color=I("black"),shape=21)
+
+```
+
+***
+
+### Price and Carat Relationship
+Response:
+
+***
+```{r}
+
+#加特效后的答案，更容易识别和看
+ggplot(diamonds,aes(x=carat,y=price))+
+  xlim(0,quantile(diamonds$carat,0.99))+
+  ylim(0,quantile(diamonds$price,0.99))+
+  geom_point(fill=I("#F79420"),color=I("black"),shape=21)+
+  geom_smooth(method="lm")
+
+# 图片可以看出，这种直献是无法合理的预测到图形的，会错过这个模型的一些东西，这个就叫做欠拟合。
+
+
+```
+
+### Frances Gerety
+Notes:
+
+#### A diamonds is
+
+
+***
+
+### The Rise of Diamonds
+Notes:   钻石骗局
+
+
+***
+
+### ggpairs Function
+Notes:
+
+```{r ggpairs Function}
+# install these if necessary
+# install.packages('GGally')
+# install.packages('scales')
+# install.packages('memisc')
+# install.packages('lattice')
+# install.packages('MASS')
+# install.packages('car')
+# install.packages('reshape2')
+# install.packages('plyr')
+
+# load the ggplot graphics package and the others
+library(ggplot2)
+library(GGally)
+library(scales)
+library(memisc)
+
+# sample 10,000 diamonds from the data set
+set.seed(20022012)
+# diamond_samp <- diamonds[sample(1:length(diamonds$price), 10000), ]
+# ggpairs(diamond_samp, params = c(shape = I('.'), outlier.shape = I('.')))   zhege haoxiang yongbuliao 
+
+ggpairs(diamond_samp, 
+  lower = list(continuous = wrap("points", shape = I('.'))), 
+  upper = list(combo = wrap("box", outlier.shape = I('.'))))
+
+
+```
+
+What are some things you notice in the ggpairs output?
+Response:
+
+***
+
+### The Demand of Diamonds
+Notes:
+
+```{r The Demand of Diamonds}
+library(gridExtra)
+
+plot1 <- ggplot(data=diamonds,aes(x =price)) +geom_histogram() 
+  # ggtitle('Price')
+
+plot2 <- ggplot(data=diamonds,aes(x =price)) +geom_histogram(fill="yellow")+ scale_x_log10()  #使用对数标度
+  # ggtitle('Price (log10)')
+
+grid.arrange(plot1,plot2)
+
+# 偏锋变成了双峰的图案。,对数转换，对数转换的作用是什么。
+# 数据转换是一种处理偏态数据的方法
+```
+
+***
+
+### Connecting Demand and Price Distributions
+Notes:
+
+***
+
+### Scatterplot Transformation
+
+```{r Scatterplot Transformation}
+
+```
+
+
+### Create a new function to transform the carat variable
+
+```{r cuberoot transformation}
+cuberoot_trans = function() trans_new('cuberoot', transform = function(x) x^(1/3),
+                                      inverse = function(x) x^3)
+```
+
+#### Use the cuberoot_trans function
+# 第10 讲到函数了，函数的这儿R中的，可以使用。
+散点图转换，这儿使用
+```{r Use cuberoot_trans}
+ggplot(aes(carat, price), data = diamonds) + 
+  geom_point() + 
+  scale_x_continuous(trans = cuberoot_trans(), limits = c(0.2, 3),
+                     breaks = c(0.2, 0.5, 1, 2, 3)) + 
+  scale_y_continuous(trans = log10_trans(), limits = c(350, 15000),
+                     breaks = c(350, 1000, 5000, 10000, 15000)) +
+  ggtitle('Price (log10) by Cube-Root of Carat')
+```
+
+***
+
+### Overplotting Revisited
+
+第11题在这儿放着，
+
+提示 1：在文档中查找 geom_point()。
+
+提示 2：你需要为 geom_point() 中的 alpha、size 和 position 调整参数。
+
+提示 3：要抖动散点，请将 position 设置为等于“jitter”。
+```{r Sort and Head Tables}
+#  size 说的是半径为1的圆嘛
+
+ggplot(aes(carat, price), data = diamonds) + 
+  geom_point(alpha=0.5,size=3/4,position = position_jitter(width = 0.5,height = 0)) + 
+  scale_x_continuous(trans = cuberoot_trans(), limits = c(0.2, 3),
+                     breaks = c(0.2, 0.5, 1, 2, 3)) + 
+  scale_y_continuous(trans = log10_trans(), limits = c(350, 15000),
+                     breaks = c(350, 1000, 5000, 10000, 15000)) +
+  ggtitle('Price (log10) by Cube-Root of Carat')
+
+# 答案 ,position =jitter 就这样放在这儿了。这个是默认的处理方法，可以在不清楚参数时候使用
+ggplot(aes(carat, price), data = diamonds) + 
+  geom_point(alpha=0.5,size=3/4,position = "jitter") + 
+  scale_x_continuous(trans = cuberoot_trans(), limits = c(0.2, 3),
+                     breaks = c(0.2, 0.5, 1, 2, 3)) + 
+  scale_y_continuous(trans = log10_trans(), limits = c(350, 15000),
+                     breaks = c(350, 1000, 5000, 10000, 15000)) +
+  ggtitle('Price (log10) by Cube-Root of Carat')
+
+# 这样以后看到抖动后聚集的店就是明显的比较多的地方了嘛
+
+```
+
+
+```{r Overplotting Revisited}
+ggplot(aes(carat, price), data = diamonds) + 
+  geom_point() + 
+  scale_x_continuous(trans = cuberoot_trans(), limits = c(0.2, 3),
+                     breaks = c(0.2, 0.5, 1, 2, 3)) + 
+  scale_y_continuous(trans = log10_trans(), limits = c(350, 15000),
+                     breaks = c(350, 1000, 5000, 10000, 15000)) +
+  ggtitle('Price (log10) by Cube-Root of Carat')
+```
+
+***
+
+### Other Qualitative Factors
+Notes:
+12 定性因子的绘制颜色。
+***
+
+### Price vs. Carat and Clarity
+
+Alter the code below.
+```{r Price vs. Carat and Clarity}
+# install and load the RColorBrewer package
+install.packages('RColorBrewer')
+library(RColorBrewer)
+
+
+#我看不懂这个函数的式子，需要先看看。
+cuberoot_trans = function() trans_new('cuberoot', transform = function(x) x^(1/3),
+                                      inverse = function(x) x^3)
+
+
+ggplot(aes(x = carat, y = price), data = diamonds) + 
+  geom_point(alpha = 0.5, size = 1, position = 'jitter') +
+  scale_color_brewer(type = 'div',
+    guide = guide_legend(title = 'Clarity', reverse = T,
+    override.aes = list(alpha = 1, size = 2))) +  
+  scale_x_continuous(trans = cuberoot_trans(), limits = c(0.2, 3),
+    breaks = c(0.2, 0.5, 1, 2, 3)) + 
+  scale_y_continuous(trans = log10_trans(), limits = c(350, 15000),
+    breaks = c(350, 1000, 5000, 10000, 15000)) +
+  ggtitle('Price (log10) by Cube-Root of Carat and Clarity')
+
+
+
+ggplot(aes(x = carat, y = price), data = diamonds) + 
+  geom_point(alpha = 0.5, size = 1, position = 'jitter') +
+  scale_color_brewer(type = 'div',
+    guide = guide_legend(title = 'Clarity', reverse = T,
+    override.aes = list(alpha = 1, size = 2))) +  
+  scale_x_continuous(trans = cuberoot_trans(), limits = c(0.2, 3),
+    breaks = c(0.2, 0.5, 1, 2, 3)) + 
+  scale_y_continuous(trans = log10_trans(), limits = c(350, 15000),
+    breaks = c(350, 1000, 5000, 10000, 15000)) +
+  ggtitle('Price (log10) by Cube-Root of Carat and Clarity')
+```
+
+***
+
+### Clarity and Price
+Response:
+
+***
+
+### Price vs. Carat and Cut
+15 价值和克拉的切工
+Alter the code below.
+```{r Price vs. Carat and Cut}
+# 还需要设置size这个大小的东西。
+# 映射的东西ggplot2中也是可以使用的，还可以在geom_point中进行显示，这两个都是可以的。
+
+ggplot(aes(x = carat, y = price, color = cut), data = diamonds) + 
+  geom_point(alpha = 0.5, size = 1, position = 'jitter') +
+  scale_color_brewer(type = 'div',
+                     guide = guide_legend(title = 'cut', reverse = T,
+                                          override.aes = list(alpha = 1, size = 2))) +  
+  scale_x_continuous(trans = cuberoot_trans(), limits = c(0.2, 3),
+                     breaks = c(0.2, 0.5, 1, 2, 3)) + 
+  scale_y_continuous(trans = log10_trans(), limits = c(350, 15000),
+                     breaks = c(350, 1000, 5000, 10000, 15000)) +
+  ggtitle('Price (log10) by Cube-Root of Carat and Clarity')
+```
+
+***
+16 切割于价格，这个怎么回事。
+### Cut and Price
+Response:
+
+***
+
+### Price vs. Carat and Color
+17 价值，与克拉 和颜色。
+Alter the code below. 我从刚才开始都没有修改下面设置的标题。
+```{r Price vs. Carat and Color}
+
+
+# 颜色可以直接在ggplot内添加映射，也可以在后面geom_point中添加映射。
+ggplot(aes(x = carat, y = price), data = diamonds) + 
+  geom_point(alpha = 0.5, size = 1, position = 'jitter',aes(color=color)) +
+  scale_color_brewer(type = 'div',
+                     #颜色类型
+                     # 小提示的标题
+    guide = guide_legend(title = 'Clarity', reverse = T,
+    override.aes = list(alpha = 1, size = 2))) +  
+  
+  # 设置刻度
+  scale_x_continuous(trans = cuberoot_trans(), limits = c(0.2, 3),
+    breaks = c(0.2, 0.5, 1, 2, 3)) + 
+  scale_y_continuous(trans = log10_trans(), limits = c(350, 15000),
+    breaks = c(350, 1000, 5000, 10000, 15000)) +
+  
+  # 图案的标题
+  ggtitle('Price (log10) by Cube-Root of Carat and Clarity')
+
+
+
+```
+
+
+
+
+***
+18 颜色与价格。
+### Color and Price
+Response:
+
+***
+19 R中的线性回归。
+### Linear Models in R
+Notes:
+  这儿开始以后就是讲线性模型，这儿开始以后就好像不太懂了。
+Response:
+这儿意思就是必须要使用原来图形看起来就是线性那个来进行测试，进行学习。
+
+***
+
+### Building the Linear Model
+Notes:
+
+```{r Building the Linear Model}
+m1 <- lm(I(log(price)) ~ I(carat^(1/3)), data = diamonds)
+m2 <- update(m1, ~ . + carat)
+m3 <- update(m2, ~ . + cut)
+m4 <- update(m3, ~ . + color)
+m5 <- update(m4, ~ . + clarity)
+mtable(m1, m2, m3, m4, m5)
+```
+
+Notice how adding cut to our model does not help explain much of the variance
+in the price of diamonds. This fits with out exploration earlier.
+
+***
+
+### Model Problems
+Video Notes:
+
+Research:
+(Take some time to come up with 2-4 problems for the model)
+(You should 10-20 min on this)
+
+Response:
+
+***
+
+### A Bigger, Better Data Set
+Notes:
+
+```{r A Bigger, Better Data Set}
+install.package('bitops')
+install.packages('RCurl')
+library('bitops')
+library('RCurl')
+
+diamondsurl = getBinaryURL("https://raw.github.com/solomonm/diamonds-data/master/BigDiamonds.Rda")
+load(rawConnection(diamondsurl))
+```
+
+The code used to obtain the data is available here:
+https://github.com/solomonm/diamonds-data
+
+## Building a Model Using the Big Diamonds Data Set
+Notes:
+
+```{r Building a Model Using the Big Diamonds Data Set}
+
+```
+
+
+***
+
+## Predictions
+
+Example Diamond from BlueNile:
+Round 1.00 Very Good I VS1 $5,601
+
+```{r}
+#Be sure you’ve loaded the library memisc and have m5 saved as an object in your workspace.
+thisDiamond = data.frame(carat = 1.00, cut = "V.Good",
+                         color = "I", clarity="VS1")
+modelEstimate = predict(m5, newdata = thisDiamond,
+                        interval="prediction", level = .95)
+```
+
+Evaluate how well the model predicts the BlueNile diamond's price. Think about the fitted point estimate as well as the 95% CI.
+
+***
+
+## Final Thoughts
+Notes:
+
+***
+
+Click **KnitHTML** to see all of your hard work and to have an html
+page of this lesson, your answers, and your notes!
+

@@ -1,0 +1,15 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+# 失恋和白白双重打击把。
+1.复习散点图，y=price ，x weight
+
+```{r}
+
+ggplot(subset(diamonds,price <= quantile(price,0.1)),aes(x=carat,y=price))+geom_point()
+
+
+```

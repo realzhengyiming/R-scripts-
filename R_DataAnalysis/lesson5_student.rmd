@@ -1,0 +1,570 @@
+Lesson 5
+========================================================
+hello everyone I am here to continue to learn the scientics .in here
+### Multivariate Data
+Notes:
+
+***
+```{r}
+
+
+
+
+```
+
+### Moira Perceived Audience Size Colored by Age
+Notes:
+
+***
+
+### Third Qualitative Variable
+Notes:
+
+```{r Third Qualitative Variable}
+Sys.setlocale('LC_ALL','C')
+pf <- read.delim('pseudo_facebook.tsv')
+library(dplyr)  #这个都和编码有关的嘛，真是奇怪的东西啊。没办法啊，只好继续去看，继续去做了。
+library(ggplot2)
+
+
+#第三个定性变量  ,R的变量名字是可以用. 来搞的。#这样就是2，6选一个，c(2:6) 这两个是不一样的
+# pf.fc_by_age_gender <- pf[,c(2,6)]   
+# pf<- subset(pf,!is.null(gender))   #  qunide
+
+summary(pf$gender)
+
+#3
+# 删除性别为空的行，这个怎么操作呢。1.用子集subset，2.用fillter，也是 dplyr 这个包
+#group_by()：按分类型变量拆分数据
+# arrange()  按分类名字来排列，这儿是age
+# 取消分组的意思，分组了后呢
+# 都是源自于dplyr 这个包的
+# group_by 如果只按照年龄来的话那就不分男女，年龄和性别来，那就分男女和年龄
+
+pf.fc_by_age_gender <- pf%>%
+  #这个是用来去掉NA空值的，is good
+   filter(!is.na(gender)) %>%
+   group_by(age,gender)%>% summarise(
+   mean_friend_count= mean(as.numeric(friend_count)),
+   median_friend_count = median(as.numeric(as.numeric(friend_count))),
+   n =n())%>%ungroup()%>%
+  arrange(age)  
+
+
+head(pf.fc_by_age_gender)
+
+```
+
+***
+
+### Plotting Conditional Summaries
+Notes:所以说第三步是很重要的。
+首先要设置好这些东西，年龄的中位数是什么意思，一开始是使用年龄和性别来进行分组
+我还没完全理解分组的含义。todo
+整理好了数据集后才是绘图，就比较简单了。
+
+
+## 这里面的group是按照age和性别来划分，意思就是，按age进行统计，也按gender来统计
+比如性别有男和女，年龄有很多种，那就会按照这两个变成
+13 男 这样来统计 
+13 女
+14 .。。。这样的group by
+```{r 4}
+# 无颜色分类的版本，绘图颜色也是可以映射的，作为第三个变量加入进去了。
+ggplot(data=pf.fc_by_age_gender,aes(x=age,y=median_friend_count))+geom_line()
+#aes(color=gender) 使用颜色作为第三个变量，性别分类来绘图，真是厉害。
+ggplot(data=pf.fc_by_age_gender,aes(x=age,y=median_friend_count))+geom_line(aes(color=gender))
+
+```
+
+***
+
+### Thinking in Ratios
+Notes:
+5用比例思考
+
+```{r }
+#中位数的比值，但是
+ggplot(data=pf.fc_by_age_gender,aes(x=age,y=median_friend_count))+geom_line()
+
+#怎么分类进行对比，看跳了这个视频
+ggplot(data=pf.fc_by_age_gender,aes(x=age,y=median_friend_count))+geom_line()
+
+```
+
+***
+
+### Wide and Long Format
+Notes:   这儿应该叫做用R进行数据整理
+## 6.宽和长格式
+### 什么时候需要互相转化呢，这个需要看具体需要进行怎么样的分析，那就可以进行怎么样的转变。
+ 1.什么是“长，宽“数据。
+宽变长 -》 把多个column的名字（变成了分类的变量这样理解），从列名上 变成值放到 列值中，然后另起一个列名。
+
+长变宽 -》 把某几列值中的分类变量，按照分类变量的不同名字放到column名的位置上，然后他们的值就用数据来进行统计的意思
+
+还是很好区分比较的，值是数字或者是分类变量的不同，数字为宽数据，值为分类变量那就是长数据！
+
++ 一般的使用场景就是这种按某几个变量分好类，这个之前python做那个简化分类是一样的操作。
+
++ tidyr 包重构数据  这个包也可以进行数据结构的重置，这个可能更容易一点
+tidyr::gather/spread  （长变宽/宽变长）
+
++ reshape2 这个包也是可以进行操作的。
+reshape2::melt/dcast  （长变宽/宽变长）
+多个column列名合并成一个列，并且值用column作为分类变量来填充melt
+多个分类变量列的值，去掉原来的column名字，然后把他们放到column中去，值就变成了
+数量 dcast
+
+melt合并后会有   column名称 /和度量值名称（记录数量）    （这个是长数据）
+
+
+类比python的pandas库里面也有这种功能的东西的。加油！
+
+#7 重塑数据。 长格式，宽格式
+```{r }
+
+# install.packages("tidyr") # only need to run this once 
+library(tidyr) 
+#宽变长
+pf.fc_by_age_gender.wide <- spread(subset(pf.fc_by_age_gender, select = c('gender', 'age', 'median_friend_count')), gender, median_friend_count)
+#long change to short
+# testShort <- gather(
+#   data=testpf,
+#   
+#   
+# )
+# head(testpf)
+
+#把分类变量放到了column中去，然后值用数字来进行统计，所以这个就宽数据，长—》宽了这儿。
+# install.packages("reshape2")   #两个包都可以用的
+
+library(reshape2)
+#长变宽
+# dcast(data=testpf,)
+
+#宽变长
+melt(data = pf.fc_by_age_gender)
+
+
+install.packages("gcookbook")
+library(gcookbook)
+plum  #分类变量放出来，数值塞回去。
+head(plum)
+head(dcast(plum,length+time ~ survival,value.var="count"))
+
+
+#这儿就是把中位数放进去了，
+
+```
+
+***
+
+### Reshaping Data
+Notes:
+这儿还真是用一个新的包
+这两个包真是有意思，哈哈。相当于顺便把pandas的数据透视给理解了。
+1.堆叠group_by
+2.解堆叠
+3.长变宽，
+4.宽变长
+
+pandas是类似的东西。
+
+```{r}
+install.packages('reshape2')
+library(reshape2)
+```
+
+
+***
+
+### Ratio Plot
+Notes:
+###8.比例图
+有了单独开来的这些每一列的数字统计，那就可以比较方便的进行比例的运算，这就是宽图的好处。
+
+```{r Ratio Plot}
+pf.fc_by_age_gender.wide
+ggplot(data = pf.fc_by_age_gender.wide,aes(x=age,y=female/male))+geom_line()+
+  geom_hline(yintercept = 1,alpha=0.9,linetype=2,color="red")  #添加一条参考线.看得清楚一点好
+
+```
+
+***
+
+## 9. 第三个分类变量。
+### Third Quantitative Variable
+Notes:
+tenure 这个是加入天数，因为2014年才创立的，所以需要用2014
+```{r Third Quantitative Variable}
+pf$year_joined <-floor(  2014 - pf$tenure/365) # 这个是向上取整，2013.dx=2014这样算的
+
+# 新增加一个列叫做加入时间，使用2014年作为基准
+
+
+```
+
+***
+## 10，切割一个变量
+### Cut a Variable
+这个函数主要是使用于把连续型变量变成离散型变量来用的。
+Notes:
+cut()函数有三个主要参数
+Inf这个是正无穷。-Inf负无穷
+1.data   #需要切割的列，一般是这样的吗
+2. breaks = c(0,5,6,Inf)  #这个的意思就是（0，5】左边开区，右边闭区间
+3. labels 标签，也是字符向量的形式。
+```{r Cut a Variable}
+?cut   #切割连续型的数字变量，比如长度，时间这些，用数字标识的。
+ # (2004, 2009]
+#        (2009, 2011]
+#        (2011, 2012]
+#        (2012, 2014]
+summary(pf$year_joined)
+table(pf$year_joined)
+
+#按照int类型，然后进行区间分类。
+pf$year_joined.bucket  <- cut(pf$year_joined,breaks = c(2004,2009,2011,2012,2014))
+
+
+
+```
+
+***
+# 11.把他们绘制到一起。
+### Plotting it All Together
+Notes:
+## 这儿的问题是怎么geom_line(fun.y,stat参数不理解，放着先)
+
+```{r Plotting it All Together}
+table(pf$year_joined.bucket,useNA = 'ifany')   #把未分类的那些当成NA进行处理，未能分类的这些。  
+table(pf$year_joined.bucket)
+#分成了三段了，这样就可以进行统计了。如果有任意的空值就设置成空值
+?useNA   #未分类的都会归到NA去了，不在区间内的都会。
+ggplot(data=pf,aes(x=age,y=friend_count))+ geom_line()
+
+#这个是上次的那个按照性别来进行对比划分的。stat，fun.y这两个参数我不太懂。
+ggplot(aes(x = age, y = friend_count), 
+              data = subset(pf, !is.na(gender))) + 
+  geom_line(aes(color = gender), stat = 'summary', fun.y = median)
+
+#把第三个变量加入进去，把之前按性别分颜色的改成按加入年限来分线条颜色
+#观察年龄和朋友数量的基础上，加入了第三个变量，用颜色映射（不同线段)来观察第三个变量的情况。这个必须要会
+## 同理第三个变量需要去掉空值 ，前面subset和后面的color的映射一样匹配
+ggplot(aes(x = age, y = friend_count), 
+              data = subset(pf, !is.na(year_joined.bucket))) + 
+  geom_line(aes(color = year_joined.bucket), stat = 'summary', fun.y = median)
+
+
+```
+
+***
+
+### 12 Plot the Grand Mean
+### 12 绘制总均值
+Notes:
+
+```{r Plot the Grand Mean}
+
+#加上一条均值的辅助线
+ggplot(aes(x = age, y = friend_count), 
+              data = subset(pf, !is.na(year_joined.bucket))) + 
+  geom_line(aes(color = year_joined.bucket), stat = 'summary', fun.y = mean)+  
+  # geom_hline(yintercept = mean(pf$friend_count),alpha=0.9,linetype=2,color="red")
+  geom_line(stat="summary",fun.y=mean,linetype=2)   #这个默认就是y值的均值嘛，总
+
+
+#全年朋友数量的平均值才对。
+
+
+
+mean(subset(pf,!is.na(year_joined)))
+str(pf$year_joined)
+
+
+
+
+```
+
+***
+
+### Friending Rate
+Notes:
+13 朋友率
+tenure 是激活天数以来的日子。所以不用dob_day() ，所以首先各个数据集的字段的意思需要先搞懂，才可以进行分析
+
+这儿涉及打了with命令。
+
+```{r Friending Rate}
+# pf$friend_rate <- pf$friend_count/pf$dob_day
+floor(summary(subset(pf,ten)$friend_rate))
+
+
+#the result of the answer from the video
+# ?with（data，操作的函数）  
+# yitian d zuidashulv y
+# 这个的意思就是将某个数据集的某些列使用某些函数这时候就可以使用with
+with(subset(pf,tenure>=1),summary(friend_count/tenure))
+
+
+?geom_line()
+
+```
+
+***
+
+### Friendships Initiated
+Notes:
+What is the median friend rate?
+0.2205  
+What is the maximum friend rate?
+417   很明现的可以看出这儿肯定是有异常值，差那么远。1.5倍q
+```{r Friendships Initiated}
+
+```
+
+***
+# 14申请好友数。
+从这儿开到很多的东西其实都是可以除于时间的，变成xxx/time这样的单位，然后加上颜色的映射，其实就有四个变量再里面了，原来如此。真是厉害。
+### Bias-Variance Tradeoff Revisited
+# 15 也在这儿，偏差方差折衷。目的是减小噪声，就是平滑一点的意思，而不是抖动
+round（） 这个函数的作用，是用来分箱用的嘛。
+round(timeDate)
+round()所属R语言包：timeDate
+Rounding and Truncating 'timeDate' Objects
+四舍五入和截断TIMEDATE对象的
+译者：生物统计家园网 机器人LoveR
+
+Notes:
+```{r Bias-Variance Tradeoff Revisited}
+
+ggplot(aes(x = tenure, y = friendships_initiated / tenure),
+       data = subset(pf, tenure >= 1)) +
+  geom_line(aes(color = year_joined.bucket),   #按照颜色的中数来进行映射分类。
+            stat = 'summary',
+            fun.y = mean)
+
+#年限分颜色段落，真棒。
+
+ggplot(aes(x = 7 * round(tenure / 7), y = friendships_initiated / tenure),
+       data = subset(pf, tenure > 0)) +
+  geom_line(aes(color = year_joined.bucket),
+            stat = "summary",
+            fun.y = mean)
+
+ggplot(aes(x = 30 * round(tenure / 30), y = friendships_initiated / tenure),
+       data = subset(pf, tenure > 0)) +
+  geom_line(aes(color = year_joined.bucket),
+            stat = "summary",
+            fun.y = mean)
+
+ggplot(aes(x = 90 * round(tenure / 90), y = friendships_initiated / tenure),
+       data = subset(pf, tenure > 0)) +
+  geom_line(aes(color = year_joined.bucket),
+            stat = "summary",
+            fun.y = mean)
+
+
+7 * round(88 / 7) # 88-》91
+round(88/7)  #四舍五入用的这个东西。
+88/7
+30*round(88/30)  #90
+
+300*round(88/300) #0  除去的这个数字越大，商就越小，越小的话那就越
+
+# 这儿可以使用平滑曲线的版本，geom_smooth()  #这样就可以了，再把统计量放进去
+
+ggplot(aes(x = 90 * round(tenure / 90), y = friendships_initiated / tenure),
+       data = subset(pf, tenure > 0)) +
+  geom_smooth(aes(color = year_joined.bucket),
+            stat = "summary",
+            fun.y = mean)
+
+
+#直接这样就可以了，这样就可以不手动来进行折衷方案。
+ggplot(aes(x = tenure, y = friendships_initiated / tenure),
+       data = subset(pf, tenure > 0)) +
+  geom_smooth(aes(color = year_joined.bucket))
+# 因为有这种平滑的需求，往后是由平滑器这种东西存在的。
+
+```
+
+***
+
+### 16 Sean's NFL Fan Sentiment Study
+Notes:
+意思就是，现实生活中，很多特别是处理和时间相关的变量的东西的时候，如果太密集很容易会出现那种噪声太多的东西，这个时候就需要做平滑处理。，做平滑处理可以让人更好的看到其中的模式变化，不然真的什么都看不出来的。
+***
+
+###17 Introducing the Yogurt Data Set
+Notes:
+酸奶数据集
+挖掘购物的记录，比如酸奶的数据集，从中抽取有用的东西用来分析做决策，原来如此
+数据集着这种分析，首先这种数据集是 ，一个家庭可以有很多条数据记录，每一次一次记录
+***
+
+### Histograms Revisited
+### 18 重访直方图
+Notes:
+重点讲的是直方图的组距对观察偏差的影响，可以有偏差。
+```{r Histograms Revisited}
+yo <- read.csv("yogurt.csv")
+yo$id <- factor(yo$id)
+str(yo)
+# 宽数据格式，适合用来统计什么，
+# 长数据格式，适合用来观察什么，绘制什么图？
+# 直方图是一个变量的。直方图中的组距的区别问题。
+
+#直方图很重要的东西是设置合适的分段组距，和合适的观察范围。
+ggplot(yo,aes(x=price))+geom_histogram()
+
+```
+
+***
+
+### Number of Purchases
+Notes:  19 购买数量
+# 这儿可以使用一个新的函数，transform 
+# 或者是使用原来的方法。
+```{r Number of Purchases}  
+# 这儿是把各个数量全部加起来得到一个总数的数量
+yo$all.purchases <-yo$strawberry+yo$blueberry+yo$pina.colada+yo$plain+yo$mixed.berry
+
+#或者使用转换函数？默认是输入需要增加列的数据集，然后还有一个参数就是新数据集的名字和需要做的运算的东西。
+yo <- transform(yo,all.purchases=strawberry+blueberry+pina.colada+plain+mixed.berry)
+?transform
+summary(yo$all.purchases)
+#修改binwidth才可以的，还可以加个，fill="red" 参数，用来添加颜色填充。
+ggplot(yo,aes(x= all.purchases))+geom_histogram(binwidth = 1)
+
+```
+
+***
+
+### 20 Prices over Time
+### 20 随时间变化的价格。
+Notes:
+抖动很厉害的可以用geom_jitter.或者是geom_smooth 来查看抖动范围很大的数据集和。
+```{r Prices over Time}
+ggplot(data = yo,aes(x=time,y=price))+geom_smooth()  #直接用smooth真是厉害。
+
+
+ggplot(data = yo,aes(x=time,y=price))+geom_jitter()   #连续的线说明，随着时间变化，价格是比价多持续进行变化的。
+
+
+
+```
+
+***
+
+### Sampling Observations
+21 采样观测值。todo明天继续
+这儿主要说的是，可以先小样本，抽样一部分来进行分析。
+Notes:
+facet_wrap( ~ class)     #这个默认都是从左到右，然后可以设置 每行多少个这样来换行。
+单个变量一般可以选择用这个，下面那个都可以
+
+或者facet_grid(class1 ~ class2)   #可以设置横向或者纵向的方式来分面展示数据。
+所以这个是可以两个的意思吗。
+***
+
+### Looking at Samples of Households
+22 查看家庭样本，这种方法
+```{r Looking at Sample of Households}
+set.seed(4230)
+sample.ids <- sample(levels(yo$id),16)  #这个是抽样本
+sample.ids   #随机抽16个id的意思把。设置种子后就可以保证不会重复
+sample_yo <-subset(yo,id %in% sample.ids)   #抽出含有这几个id的东西，然后呢。
+
+#分面，记得，先分面
+# 可以多个图层来进行叠加。线和点，这种图是一次性甚至小范围数据样本用的。
+ggplot(data=sample_yo,aes(x=time,y=price))+facet_wrap(~id)+geom_point()+geom_line()
+
+# 可以多个图层来进行叠加。线和点，这种图是一次性甚至小范围数据样本用的。
+# 并且加上了购买数量，这里面的all.purchases 这里面。映射到点的大小中去
+## 再使用pch 设置  在绘制散点时，使用 pch 或 shape 参数来指定符号，
+ggplot(data=sample_yo,aes(x=time,y=price))+facet_wrap(~id)+geom_point(aes(size=all.purchases),pch=2)+geom_line()
+```
+
+***
+
+### The Limits of Cross Sectional Data
+### 23 这种图的限制
+好处是可以这样整体一部分数据按不同样本的来进行观察，但是需要的数据是那种有不同的时间观测值的 数据。很明显前面的那个是做不到这样的，前面那个数据只有一个时间快照，当前的快照，所以是做不到的，除非有按时间有不同的观测值，这样才可以做到，
+Notes:
+***
+
+### 24 Many Variables
+### 24多变量数据
+Notes:
+往后可能会有20个变量，或者是更多的变量一次性进行分析的。这种是我需要进行思考的东西
+还有数据分析其实是类似互联网+这种东西一样。需要和一个领域结合起来后才可以继续看。
+***
+
+### 25 Scatterplot Matrix
+### 25 散点图矩阵
+所以从1~2~3~5个变量的分析中也渐渐的知道为什么要用R 因为有ggplot2 这个包，在可视化的基础加入更多的变量来进行分析，这个东西。
+Notes:
+探索要研究哪些变量，这个很好用的啊。可以用来探索阶段先看看概略这种东西。
+***
+```{r}
+# install.packages("GGally")
+# 
+library(GGally)
+theme_set(theme_minimal(20))
+
+#set the seed reproducible results
+set.seed(1836)
+pf_subset <- pf[,c(2:6)]   #2:15 ,
+
+names(pf_subset)
+ggpairs(pf_subset[sample.int(nrow(pf_subset),1000),])
+
+
+
+#自动一次性画出很多的散点图，而且分类变量和数字变量的情况下，会出现箱型图
+# 然后直方图是连续型变量，
+
+# 类别比较少的才叫分类变量吗，会自动变成箱型图
+# 类别多一点的，比如数字的，int的都属于连续变量对吧，所以应该在  使用绘制图之前就线把该转化成factor 的分类变量转化过去才可以
+```
+
+### 26 Even More Variables
+### 26 更多变量
+上面那个点图的矩阵图可以做为很多东西的开始，很好用的。
+Notes:
+
+***
+
+### Heat Maps
+Notes:
+# 这儿也是有个问题，变量超级多的情况下，如何才能看清图呢，怎么去掉这些文字。
+
+```{r}
+nci <- read.table("nci.tsv")
+colnames(nci) <- c(1:64)
+```
+下面的这个是热力图，热土
+```{r}
+nci.long.samp <- melt(as.matrix(nci[1:200,]))
+names(nci.long.samp) <- c("gene", "case", "value")
+head(nci.long.samp)
+
+ggplot(aes(y = gene, x = case, fill = value),
+  data = nci.long.samp) +
+  geom_tile() +
+  scale_fill_gradientn(colours = colorRampPalette(c("blue", "red"))(100))
+```
+
+
+***
+
+### Analyzing Three of More Variables
+Reflection:
+
+***
+
+Click **KnitHTML** to see all of your hard work and to have an html
+page of this lesson, your answers, and your notes!
+
