@@ -1,0 +1,200 @@
+---
+title: "R语言EDA 钻石数据练习"
+output: html_document
+---
+
+1. 
+# Create a histogram of diamond prices.
+# Facet the histogram by diamond color
+# and use cut to color the histogram bars.
+# the plot is something like that http://i.imgur.com/b5xyrOu.jpg
+
+```{r }
+Sys.setlocale('LC_ALL','C')
+library(ggplot2)
+
+
+#颜色填充映射那儿需要使用aes fill，如果是体积的东西，比如直方图这种东西，
+# 如果是线或者点，那就用color=
+ggplot(data = diamonds,aes(x=price))+geom_histogram(aes(fill=cut))+facet_wrap(~color) #+scale_color_manual(values=c("#CC6666","#7777DD"))
+
+
+
+```
+2
+# Create a scatterplot of diamond price vs.
+# table and color the points by the cut of
+# the diamond.
+
+# The plot should look something like this.
+# http://i.imgur.com/rQF9jQr.jpg
+```{r}
+ggplot(data=diamonds,aes(y= price,x=table))+geom_point(aes(color=cut))
+
+#问范围就想到四分位数，大部分数据是在四分卫据内
+summary(subset(diamonds,cut=="Ideal")$table)
+summary(subset(diamonds,cut=="Premium")$table)
+
+
+```
+3.三是目测进行查看大概的范围。
+4.   todo 这个真的比较有意思，好用。
+# Create a scatterplot of diamond price vs.
+# volume (x * y * z) and color the points by
+# the clarity of diamonds. Use scale on the y-axis
+# to take the log10 of price. You should also
+# 这一点需要怎么去做呢。
+# omit the top 1% of diamond volumes from the plot.
+
+# Note: Volume is a very rough approximation of
+# a diamond's actual volume.
+
+# The plot should look something like this.
+# http://i.imgur.com/excUpea.jpg
+```{r}
+
+library(dplyr )
+# 1.这儿有常规这样赋值的方法。还有使用with的方法
+# diamonds$volume = diamonds$*......常规
+diamonds$volume =diamonds$x*diamonds$y*diamonds$z
+diamonds_clean <- diamonds %>% filter(diamonds$volume!=0)
+
+# 2.with(diamonds,volume=diamonds$x*diamonds$y*diamonds$z)
+diamonds <-transform(diamonds,volume=x*y*z)
+
+
+#正确的答案。
+test <- ggplot(aes(x=volume,y=price),data=subset(diamonds,volume <= quantile(volume,.9)))
+test + geom_point(aes(color=clarity))+scale_x_log10()+xlim(0,500)+
+  scale_color_brewer(type="div")
+
+
+
+
+
+#下面的都是自己的尝试
+ggplot(data=diamonds_clean,aes(y=price,x=volume))+geom_point(aes(color=clarity))+scale_y_log10()+scale_x_continuous()+xlim(0,500)+
+  geom_line(stat = 'summary', fun.y = quantile,fun.args =list(probs = .9),linetype=2)   #可以是点图，可以是折线图，这些都是剋的。
+
+
+ggplot(data=diamonds_clean,aes(y=price,x=volume))+scale_y_log10()+scale_x_continuous()+xlim(0,500)+geom_line(aes(color=clarity),stat = 'summary', fun.y = quantile,fun.args =list(probs = .9))   #可以是点图，可以是折线图，这些都是剋的。
+
+
+
+
+
+
+
+```
+5.  新建友谊的比例。
+#许多有趣的变量是从另外两个或更多的变量派生出来的。
+#例如，我们可能想知道一个人的网络在多大程度上
+#用户主动发起的Facebook等服务。两用户
+#拥有相同的学位（或朋友数量）可能非常
+#如果其中一个启动了
+#服务，而另一个发起的非常少。所以它可能是
+#考虑到现有友谊中
+#用户已启动。这可能是一个很好的预测如何活跃
+#将用户与同龄人或其他特征进行比较，例如
+#个性（即，此人是否外向？）.
+#您的任务是创建一个名为“prop_initiated”的新变量
+#在伪Facebook数据集中。变量应包含
+#用户发起的友谊的比例。
+#此编程任务将自动分级。
+```{r}
+
+pf <- read.delim('pseudo_facebook.tsv')
+# the rate of the friendship_initiated
+# 1. set new column can use two method
+# 1  如果问题是研究相同年龄段的人中哪些是 比较活跃的 ，特指 init friend比例比较大的人。
+# in the dead end,three variables 
+pf$prop_initiated <-pf$friendships_initiated/pf$friend_count
+
+# pf$friendships_initiated/pf$friend_count
+# pf <- transform(pf,)
+pf$year_joined <-floor(  2014 - pf$tenure/365) #这个是向上取整，2013.dx=2014这样算的
+pf$year_joined.bucket  <- cut(pf$year_joined,breaks = c(2004,2009,2011,2012,2014))
+
+
+
+ggplot(data=subset(pf,!is.na(year_joined.bucket)),aes(x=friend_count,y=prop_initiated))+geom_line(aes(color=year_joined.bucket))+xlim(0,25) +ylim(0,5)  #+geom_jitter() 
+# 可以看到初始化的这个，时间段在最前的发起的朋友是最多的。
+
+
+
+ggplot(data=subset(pf,!is.na(year_joined.bucket)),aes(x=tenure,y=prop_initiated))+geom_point() #+geom_jitter() 
+
+
+ggplot(aes(x=tenure,y=friendships_initiated/friend_count),data=pf)+geom_line(stat = 'summary',fun.y=median,aes(color=year_joined.bucket)) 
+  #+scale_y_continuous(limits=c(0,0.8),breaks=seq(0,.8,.25))
+
+
+
+```
+6.
+中位数比例，这个又是什么东西啊。
+# Create a line graph of the median proportion of
+# friendships initiated ('prop_initiated') vs.
+# tenure and color the line segment by
+# year_joined.bucket.
+# Recall, we created year_joined.bucket in Lesson 5
+# by first creating year_joined from the variable tenure.
+# Then, we used the cut function on year_joined to create
+# four bins or cohorts of users.
+# (2004, 2009]
+# (2009, 2011]
+# (2011, 2012]
+# (2012, 2014]
+# The plot should look something like this.
+# http://i.imgur.com/vNjPtDh.jpg
+# OR this
+# http://i.imgur.com/IBN1ufQ.jpg
+```{r}
+
+pf$prop_initiated <-pf$friendships_initiated/pf$friend_count
+
+
+ggplot(data=subset(pf,prop_initiated!=0),aes(x=tenure,y=prop_initiated))+geom_line(stat="summary",fun.y=median,aes(color=year_joined.bucket))
+#+scale_y_continuous(limits = c(0,0.8),breaks=seq(0,.8,.25))
+
+
+```
+7.平滑化这个图，我会感恩，我会喜欢你
+
+
+```{r}
+pf$prop_initiated <-pf$friendships_initiated/pf$friend_count
+
+ggplot(data=subset(pf,prop_initiated!=0),aes(x=tenure,y=prop_initiated))+geom_smooth(stat="summary",fun.y=mean,aes(color=year_joined.bucket))#+geom_smooth( stat = 'summary', fun.y = mean)
+
+
+
+#用这个分类，并且汇总显示他们的平均值。
+table(pf$year_joined.bucket)
+
+
+```
+
+8. 找到各个分组里面的均值，并且进行比较，直接用数字sumarry来进行比较吗。
+9. 是看图
+```{r}
+# 大家都不喜欢白癜风。
+summary(subset(pf,year_joined.bucket=="(2004,2009]")$friendships_initiated)
+
+
+
+```
+10
+```{r}
+ggplot(data=diamonds,aes(y= price/carat,x=cut))+geom_point(aes(color=color))+scale_color_brewer(type = 'div')+facet_wrap(~clarity)# faceted by clarity
+
+# 添加了随机扰动后的情况, sandiantu duidie de 
+ggplot(data=diamonds,aes(y= price/carat,x=cut))+geom_point(aes(color=color),position =”jitter"))+scale_color_brewer(type = 'div')+facet_wrap(~clarity)# faceted by clarity
+
+
+```
+
+
+
+
+
